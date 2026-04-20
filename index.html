@@ -2,6 +2,9 @@
 <html lang="pt">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Timeline de Recrutamento · Empresa A · Maio 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap" rel="stylesheet">
@@ -451,23 +454,23 @@
   <!-- TOTAL -->
   <div class="total-bar">
     <div class="total-stat">
-      <span class="num" id="tot-done" style="color: var(--done)">3</span>
-      <span class="label">Concluídos</span>
+      <span class="num" id="tot-form-info" style="color: var(--formulario)">—</span>
+      <span class="label">Form.<br>informados</span>
     </div>
     <div class="total-divider"></div>
     <div class="total-stat">
-      <span class="num" id="tot-info" style="color: var(--info)">6</span>
-      <span class="label">Informados</span>
+      <span class="num" id="tot-ent-done" style="color: var(--entrevista)">—</span>
+      <span class="label">Entrev.<br>concluídas</span>
     </div>
     <div class="total-divider"></div>
     <div class="total-stat">
-      <span class="num" id="tot-tci" style="color: var(--tci)">0</span>
-      <span class="label">TCI assinado</span>
+      <span class="num" id="tot-bio-done" style="color: var(--biomecanica)">—</span>
+      <span class="label">Biomec.<br>concluídas</span>
     </div>
     <div class="total-divider"></div>
     <div class="total-stat">
       <span class="num" id="tot-pct" style="color: var(--accent)">—</span>
-      <span class="label">Progresso</span>
+      <span class="label">Progresso<br>ponderado</span>
     </div>
     <div class="global-progress">
       <div class="three-bars">
@@ -564,14 +567,12 @@ const tracks = [
     color: 'var(--formulario)',
     phases: ['Informação entregue','TCI assinado','Formulário preenchido'],
     perPosto: {'Apex':15,'Capstrip':15,'TBM-PU':55,'Inspectomat':15,'OTR':15},
-    // TBM-PU: 17 informados; Apex: 3; Capstrip: 3
     initialStates: {
-      'Apex':       [1,0,0,0,0],
-      'Capstrip':   [1,0,0,0,0],
-      'TBM-PU':     [2,1,1,1,0],
-      'Inspectomat':[1,0,0,0,0],
-      'OTR':        [0,0,0,0,0],
-    
+      'Apex':       [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      'Capstrip':   [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      'TBM-PU':     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      'Inspectomat':[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      'OTR':        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     }
   },
   {
@@ -582,14 +583,12 @@ const tracks = [
     color: 'var(--entrevista)',
     phases: ['Informação entregue','TCI assinado','Entrevista realizada'],
     perPosto: 3,
-    // Apex: 1 concluída; TBM-PU: 3 concluídas
     initialStates: {
       'Apex':       [3,0,0],
       'Capstrip':   [0,0,0],
       'TBM-PU':     [3,3,3],
       'Inspectomat':[1,0,0],
       'OTR':        [0,0,0],
-    
     }
   },
   {
@@ -601,7 +600,7 @@ const tracks = [
     phases: ['Informação entregue','TCI assinado','Avaliação realizada'],
     perPosto: 5,
     initialStates: {
-      'Apex':       [3,0,0,0,0],
+      'Apex':       [1,0,0,0,0],
       'Capstrip':   [1,0,0,0,0],
       'TBM-PU':     [2,1,1,1,0],
       'Inspectomat':[1,0,0,0,0],
@@ -624,15 +623,8 @@ tracks.forEach(t => {
 });
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
-// Estado sempre carregado do código — localStorage desactivado permanentemente
-// Actualizações: reportar ao investigador → código actualizado → re-deploy (2 min)
 function saveState() {}
-function loadState() {
-  // Limpar qualquer cache residual de versões anteriores
-  for (let i = 2; i <= 25; i++) {
-    try { localStorage.removeItem('recrutamento_v' + i); } catch(e){}
-  }
-}
+function loadState() {}
 function loadState() {
   // Limpar versões antigas
   for (let i = 2; i <= 21; i++) {
@@ -824,10 +816,24 @@ function updateGlobals() {
     weightedPct += (done / total) * (100 / 3);
   });
   const pct = weightedPct.toFixed(1);
-  document.getElementById('tot-done').textContent = totalDone;
-  document.getElementById('tot-info').textContent = totalInfo;
-  document.getElementById('tot-tci').textContent = totalTCI;
-  document.getElementById('tot-pct').textContent = pct + '%';
+  // Formulários: count state >= 1
+  const formTrack = tracks.find(t => t.id === 'formularios');
+  const entTrack  = tracks.find(t => t.id === 'entrevistas');
+  const bioTrack  = tracks.find(t => t.id === 'biomecanicas');
+  let formInfo = 0, entDone = 0, bioDone = 0;
+  POSTOS.forEach(p => {
+    state['formularios'][p].forEach(s => { if (s >= 1) formInfo++; });
+    state['entrevistas'][p].forEach(s => { if (s >= 3) entDone++; });
+    state['biomecanicas'][p].forEach(s => { if (s >= 3) bioDone++; });
+  });
+  const elFI = document.getElementById('tot-form-info');
+  const elED = document.getElementById('tot-ent-done');
+  const elBD = document.getElementById('tot-bio-done');
+  const elPCT = document.getElementById('tot-pct');
+  if (elFI) elFI.textContent = formInfo;
+  if (elED) elED.textContent = entDone + '/15';
+  if (elBD) elBD.textContent = bioDone + '/25';
+  if (elPCT) elPCT.textContent = pct + '%';
   // Segmented bars per track: info / tci / done
   tracks.forEach(t => {
     const total = getTotal(t);
